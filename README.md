@@ -7,8 +7,10 @@ Sripts meant to facilitate day to day admnistration
 Meant for completing existing AD user information.
 
 #### Arguments:
-- Path : Csv filepath containing the user information
-- Template : Returns an array containging all the fields that can be completed / modified. If used in conjuction with `User` or `Group` , it will return an array filled with the user or groupmembers information.
+- Import : Path to the CSV file with the information you want to import.
+- Template : By default return a template array with all available fields. Can be used in combination with :
+    - User : Will return an array with the information of the given user.
+    - Group : Will return an array with the information of all members and submembers of the given group.
 
 ## File Management
 

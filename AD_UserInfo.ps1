@@ -3,11 +3,11 @@
 
 param(
     [Parameter(Mandatory,ParameterSetName = "Import",Position = 0)]
-    [String]$Path,
+    [String]$Import,
     [Parameter(Mandatory,ParameterSetName = "Template")]
     [Parameter(Mandatory,ParameterSetName = "SingleUser")]
     [Parameter(Mandatory,ParameterSetName = "Group")]
-    [Switch]$Template,
+    [Switch]$Export,
     [Parameter(ParameterSetName = "SingleUser")]
     [String]$User,
     [Parameter(ParameterSetName = "Group")]
@@ -107,10 +107,10 @@ Function New-Template{
 function New-Import{
     param(
         [Parameter(Mandatory)]
-        [String]$Path
+        [String]$Import
     )
     try{
-        $csv = Import-Csv -Path $Path -ErrorAction Stop
+        $csv = Import-Csv -Path $Import -ErrorAction Stop
     }catch{
         Write-Host "`t[!]Invalid file path." -ForegroundColor Red
         return
@@ -179,11 +179,11 @@ function New-Import{
     #>
 }
 
-if($Path){
-    New-Import -Path $Path
+if($Import){
+    New-Import -Path $Import
 }
 
-if($Template){
+if($Export){
     if($User){
         $Output = New-Template -User $User
     }
