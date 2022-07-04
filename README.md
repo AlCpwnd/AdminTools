@@ -12,7 +12,7 @@ Meant for completing existing AD user information.
 
 ## File Management
 
-### Folder_Inheritance.ps1
+### Explorer_FolderInheritance.ps1
 
 Will list all subfolders for which security permissions enhiritance has been disabled.
 For more info run:
