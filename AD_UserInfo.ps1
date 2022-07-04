@@ -208,10 +208,10 @@ if($Export){
     Or 
     Puts out a report containing the indicated User(s) information.
 
-    .PARAMETER Path
+    .PARAMETER Import
     Path to the csv file containing the information to complete.
 
-    .PARAMETER Template
+    .PARAMETER Export
     Switch to request the exctraction of the information. Can be used
     in combination of User or Group. If used alone, will extract a default
     example to use as a template.
