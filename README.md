@@ -3,7 +3,7 @@ Sripts meant to facilitate day to day admnistration
 
 ## Active Directory
 
-### AD_Import.ps1
+### AD_UserInfo.ps1
 Meant for completing existing AD user information.
 
 #### Arguments:
