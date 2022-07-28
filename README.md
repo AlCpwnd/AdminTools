@@ -12,6 +12,10 @@ Meant for completing existing AD user information.
     - User : Will return an array with the information of the given user.
     - Group : Will return an array with the information of all members and submembers of the given group.
 
+### AD_PswdChangePrompt
+Meant to be run at logon/startup for users. Will warn the user that his password need to be changed and how to do it.
+Change the `$Limit` variable inaccordance to your internal password policy.
+
 ## File Management
 
 ### Explorer_FolderInheritance.ps1
