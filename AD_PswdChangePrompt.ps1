@@ -1,6 +1,7 @@
 Add-Type -AssemblyName PresentationFramework
-Add-Type -AssemblyName System.Windows.Forms
-[System.Windows.Forms.Application]::EnableVisualStyles()
+
+# Verifies if the user is a local user
+if((whoami) -match (HOSTNAME)){return}
 
 # Number of days before the expiration the prompt should show up
 $Limit = 20
