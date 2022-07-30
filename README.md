@@ -25,15 +25,15 @@ All the following are within `User Configuration`. Only the fields that were mod
     - Policies
         - Administrative Templates
             - System/Logon
-                - Run these programs at logon : `C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File [<LocalScriptPath>](#hosting)`
+                - Run these programs at logon : `C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File LocalScriptPath`
     - Preferences
         - Windows Settings
             - Files
-                - Source file(s) : [<NetworkScriptPath>](#hosting)
-                - Destination file : [<LocalScriptPath>](#hosting)
+                - Source file(s) : [NetworkScriptPath](#hosting)
+                - Destination file : [LocalScriptPath](#hosting)
                 - Read-only : Enabled
             - Folders
-                - Path : [<LocalScriptDirecroty>](#hosting)
+                - Path : [LocalScriptDirecroty](#hosting)
                 - Read-only : Enabled
                 - Hidden : Enabled
 
