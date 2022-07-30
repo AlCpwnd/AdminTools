@@ -4,7 +4,7 @@ Sripts meant to facilitate day to day admnistration
 ## Active Directory
 
 ### AD_PswdChangePrompt:
-Script will prompt users at logon, regardless if they're within the domain network or not. Modify the `Limit` variable within the script in accordance to your password policies.
+Script will prompt users at logon, regardless if they're within the domain network or not. Modify the __Limit__ variable within the script in accordance to your password policies.
 
 > Disclaimer:
 > This is still a work in progress, please do the necessary tests prior to applying any of the steps related to this script.
@@ -14,13 +14,13 @@ You'll find below a suggestion on how to implement the script within a domain/ne
 These are in no way obligations, these are just how I implemented it
 
 ##### Hosting:
-You will need the script to be hosted somewhere onto you network.
+You will need the script to be hosted somewhere onto you network. The following references will be used in the rest of the script documentation:
 - `NetworkScriptPath` = \\\\YourServer\\YourShare\\AD_PswdChangePrompt.ps1 (On your server)
 - `LocalScriptPath` = C:\\Scripts\\AD_PswdChangePrompt.ps1 (On the user's machine)
 - `LocalScriptDirectory` = C:\\Scripts\\ (On the user's machine)
 
 #### Group Policy:
-All the following are within `User Configuration`. Only the fields that were modified have been documented.
+All the following are within __User Configuration__. Only the fields that were modified have been documented.
 - User Configuration
     - Policies
         - Administrative Templates
