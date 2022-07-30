@@ -4,7 +4,7 @@ Sripts meant to facilitate day to day admnistration
 ## Active Directory
 
 ### AD_PswdChangePrompt:
-Script will prompt users at logon, regardless if they're within the domain network or not.
+Script will prompt users at logon, regardless if they're within the domain network or not. Modify the `Limit` variable within the script in accordance to your password policies.
 
 > Disclaimer:
 > This is still a work in progress, please do the necessary tests prior to applying any of the steps related to this script.
@@ -48,9 +48,6 @@ Meant for completing existing AD user information.
     - User : Will return an array with the information of the given user.
     - Group : Will return an array with the information of all members and submembers of the given group.
 
-### AD_PswdChangePrompt
-Meant to be run at logon/startup for users. Will warn the user that his password need to be changed and how to do it.
-Change the `$Limit` variable inaccordance to your internal password policy.
 
 ## File Management
 
