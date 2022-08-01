@@ -1,5 +1,6 @@
 Add-Type -AssemblyName PresentationFramework
 
+Write-status "Srcipt initiated"
 # Number of days before the expiration the prompt should show up
 $Limit = 20
 
@@ -7,12 +8,12 @@ $Limit = 20
 $BuFile = "$PSScriptRoot\bu.csv"
 
 # Verifies if the user is a local user
-if((whoami) -match (HOSTNAME)){return}
+if(([Security.Principal.WindowsIdentity]::GetCurrent().Name) -match ($env:COMPUTERNAME)){return}
 
 # Verifies if a logon server is available
-$ServerTest = Test-Connection -ComputerName $env:LOGONSERVER
+$ServerTest = Get-NetIPConfiguration -All | Where-Object{$_.NetProfile.Name -match (whoami).Split("\")[0]}
 # Verifies if a backup file exists
-$FileTest = Test-Path -Path $BuFile
+$FileTest = Test-Path -Path $BuFile -ErrorAction SilentlyContinue
 
 if($ServerTest){
     # Recovers current user's information
@@ -45,6 +46,11 @@ if($FileTest -and $ServerTest){
             Date = $DateLimit
         }
     }
+}elseif(!$FileTest -and $ServerTest){
+    [PSCustomObject]@{
+        User = $env:USERNAME
+        Date = $DateLimit
+    } | Export-Csv -Path $BuFile -NoTypeInformation
 }
 
 # Calculates the time left before the change
