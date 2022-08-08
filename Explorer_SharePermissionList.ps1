@@ -20,7 +20,7 @@ $Report = foreach($Share in $Shares){
             Share = $Share.Name
             Path = $Share.Path
             Identity = $Permission.IdentityReference
-            $Permission = $Permission.FileSystemRights
+            Permission = $Permission.FileSystemRights
         }
     }
 }
