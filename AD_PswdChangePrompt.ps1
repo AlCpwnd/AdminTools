@@ -46,6 +46,7 @@ if($FileTest -and $ServerTest){
             Date = $DateLimit
         }
     }
+# Generates a new file if none were detected
 }elseif(!$FileTest -and $ServerTest){
     [PSCustomObject]@{
         User = $env:USERNAME
