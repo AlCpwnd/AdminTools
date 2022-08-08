@@ -11,7 +11,7 @@ if($Path){
 $i = 0
 $iMax = $Folders.Count
 $Report = foreach($Folder in $Folders){
-    Write-Progress -Activity "Verifying rights" -Status $Folder.Name -PercentComplete ($i/$iMax*100)
+    Write-Progress -Activity "Verifying rights [$i/$($iMax)]" -Status $Folder.Name -PercentComplete ($i/$iMax*100)
     $Access = Get-Acl -Path $Folder.FullName | Select-Object -ExpandProperty Access
     $InheritedPermission = ($Access | Where-Object{$_.IsInherited}).Count
     if(!$InheritedPermission){
@@ -26,6 +26,7 @@ if($Report.Count -le 30){
     $FileName = "$PSScriptRoot\$(Get-Date -Format yyyy_MM_dd)_Inheritance.txt"
     $Report | Out-File -FilePath $FileName
     Write-Host "`n`t[i]Results saved under: " -ForegroundColor Cyan -NoNewline; $FileName
+    notepad.exe $FileName
 }
 
 <#
