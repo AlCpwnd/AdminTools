@@ -11,6 +11,7 @@ function Show-Status{
         [Parameter(Mandatory,Position=0)][ValidateSet("info","error")]$Type,
         [Parameter(Mandatory,Position=1)][String]$Message
     )
+    if($Silent){return}
     $Date = Get-Date -Format HH:mm:ss
     switch($Type){
         "Info" {$Parameters = @{Object = "$Date (i) $Message"}}
