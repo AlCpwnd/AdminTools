@@ -28,7 +28,7 @@ function Get-FolderPermission{
     )
 
     if(!(Test-Path $FolderPath -PathType Container)){
-        Show-Status error "Invalid folder path : $FolderPath" -ForegroundColor Red
+        Show-Status error "Invalid folder path: $FolderPath"
         return
     }
 
@@ -80,15 +80,17 @@ $jMax = $Shares.Count
 Show-Status info "$jMax Share(s) found"
 
 $Report = foreach($Share in $Shares){
+    Show-Status info "Starting with Share: $($Share.Name)"
     Write-Progress -Activity "Verifying permission" -Status $Share.Name -Id 0 -PercentComplete (($j/$jMax)*100)
     $SharePermissions = Get-FolderPermission -FolderPath $Share.Path
     $Exceptions = Get-InheritanceBrokenFolders -Path $Share.Path
     if($Exceptions){
         $SharePermissions += foreach($Exception in $Exceptions){
-            Show-Status info "Inheritance break found : $Exception" 
+            Show-Status info "Inheritance break found: $Exception" 
             Get-FolderPermission -FolderPath $Exception
         }
     }
+    Show-Status info "Done with Share: $($Share.Name)"
     $SharePermissions
     $j++
 }
@@ -124,7 +126,7 @@ if($UserExceptions){
         try{
             "$Env:USERDOMAIN\$((Get-ADUser $User).SamAccountName)"
         }catch{
-            Show-Status error "Invalid exception : $User"
+            Show-Status error "Invalid exception: $User"
         }
     }
     $FinalReport = $Report | Where-Object{$Filter -notcontains $_.Identity}
@@ -141,4 +143,4 @@ if($ExplodeGroups){
 $Date = Get-Date -Format yyyyMMdd
 $FilePath = "$PSScriptRoot\$Date`_$Env:COMPUTERNAME`_$Status.csv"
 $FinalReport | Export-Csv -Path  -Delimiter ";" -NoTypeInformation
-Show-Status info "Report exported to : $FilePath"
+Show-Status info "Report exported to: $FilePath"
