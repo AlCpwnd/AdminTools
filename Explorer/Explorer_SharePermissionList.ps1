@@ -1,12 +1,12 @@
 param(
-    [Parameter(Position=0)][String]$Computer,
+    [Parameter(Position=0)][String]$ShareName,
     [Switch]$All
 )
 
 if($Computer){
-    $Shares = Get-SmbShare -Name $Computer | Where-Object{$_.Path -and (Test-Path $_.Path)}
+    $Shares = Get-SmbShare -Name $ShareName | Where-Object{$_.ShareType -eq "FileSystemDirectory" -and (Test-Path $_.Path)}
 }else{
-    $Shares = Get-SmbShare | Where-Object{$_.Path -and (Test-Path $_.Path)}
+    $Shares = Get-SmbShare | Where-Object{$_.ShareType -eq "FileSystemDirectory" -and (Test-Path $_.Path)}
 }
 
 $Report = foreach($Share in $Shares){
