@@ -54,17 +54,24 @@ function Get-InheritanceBrokenFolders {
     param(
         [Parameter(Mandatory,Position=0)][string]$Path
     )
-
-    $Folders = Get-ChildItem $Path -Recurse | Where-Object{$_.PSIsContainer}
+    try{
+        $Folders = Get-ChildItem $Path -Recurse -ErrorAction Stop | Where-Object{$_.PSIsContainer}
+    }catch{
+        Show-Status error "Couldn't verify subfolders of: $Path"
+    }
 
     $i = 0
     $iMax = $Folders.Count
     $Report = foreach($Folder in $Folders){
         Write-Progress -Activity "Verifying rights [$i/$($iMax)]" -Status $Folder.Name -PercentComplete ($i/$iMax*100) -Id 1 -ParentId 0
-        $Access = Get-Acl -Path $Folder.FullName | Select-Object -ExpandProperty Access
-        $InheritedPermission = ($Access | Where-Object{$_.IsInherited}).Count
-        if(!$InheritedPermission){
-            $Folder.FullName
+        try{
+            $Access = Get-Acl -Path $Folder.FullName | Select-Object -ExpandProperty Access
+            $InheritedPermission = ($Access | Where-Object{$_.IsInherited}).Count
+            if(!$InheritedPermission){
+                $Folder.FullName
+            }
+        }catch{
+            Show-Status error "Couldn't recover permissions from: $($Folder.FullName)"
         }
         $i++
     }
@@ -140,7 +147,11 @@ if($ExplodeGroups){
     $Status = "Group"
 }
 
-$Date = Get-Date -Format yyyyMMdd
-$FilePath = "$PSScriptRoot\$Date`_$Env:COMPUTERNAME`_$Status.csv"
-$FinalReport | Export-Csv -Path  -Delimiter ";" -NoTypeInformation
-Show-Status info "Report exported to: $FilePath"
+try{
+    $Date = Get-Date -Format yyyyMMdd
+    $FilePath = "$PSScriptRoot\$Date`_$Env:COMPUTERNAME`_$Status.csv"
+    $FinalReport | Export-Csv -Path $FilePath -Delimiter ";" -NoTypeInformation
+    Show-Status info "Report exported to: $FilePath"
+}catch{
+    Show-Status error "Export attempt failed. Report saved under variable"
+}
