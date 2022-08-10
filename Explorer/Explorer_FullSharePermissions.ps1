@@ -4,7 +4,7 @@ param(
     [Switch]$Silent
 )
 
-#Requires -Module ActiveDirectory,SmbShare
+#Requires -Module SmbShare
 
 function Show-Status{
     param(
@@ -32,6 +32,8 @@ function Get-FolderPermission{
         return
     }
 
+    Show-Status info "Recovering permissions for: $FolderPath"
+
     if(!$All){
         $Permissions = (Get-Acl $FolderPath).Access | Where-Object{$_.IdentityReference -match $Env:USERDOMAIN}
     }else{
@@ -55,9 +57,11 @@ function Get-InheritanceBrokenFolders {
         [Parameter(Mandatory,Position=0)][string]$Path
     )
     try{
+        Show-Status info "Recovering subfolders of: $Path"
         $Folders = Get-ChildItem $Path -Recurse -ErrorAction Stop | Where-Object{$_.PSIsContainer}
     }catch{
         Show-Status error "Couldn't verify subfolders of: $Path"
+        return
     }
 
     $i = 0
@@ -104,27 +108,32 @@ $Report = foreach($Share in $Shares){
 Write-Progress -Activity "Verifying permission" -Status $Share.Name -Id 0 -Completed
 
 if($ExplodeGroups){
-    $FinalReport = foreach($line in $Report){
-        try{
-            $Members = Get-ADGroupMember $line.Identity.Value.Split("\")[1] -ErrorAction Stop
-            foreach($User in $Members){
+    $ModuleCheck = Get-Module -Name ActiveDirectory -ListAvailable
+    if(!$ModuleCheck){
+        Show-Status error "ActiveDirectory module is missing from this device"
+    }else{
+        $FinalReport = foreach($line in $Report){
+            try{
+                $Members = Get-ADGroupMember $line.Identity.Value.Split("\")[1] -ErrorAction Stop
+                foreach($User in $Members){
+                    [PSCustomObject]@{
+                        Path = $line.Path
+                        Group = $line.Identity.Value.Split("\")[1]
+                        Identity = "$Env:USERDOMAIN\$($User.SamAccountName)"
+                        Permission = $line.Permission
+                    }
+                }
+            }catch{
                 [PSCustomObject]@{
                     Path = $line.Path
-                    Group = $line.Identity.Value.Split("\")[1]
-                    Identity = "$Env:USERDOMAIN\$($User.SamAccountName)"
+                    Group = "<Direct_Access>"
+                    Identity = $line.Identity
                     Permission = $line.Permission
                 }
             }
-        }catch{
-            [PSCustomObject]@{
-                Path = $line.Path
-                Group = "<Direct_Access>"
-                Identity = $line.Identity
-                Permission = $line.Permission
-            }
         }
+        $Report = $FinalReport
     }
-    $Report = $FinalReport
 }
 
 if($UserExceptions){
@@ -153,5 +162,6 @@ try{
     $FinalReport | Export-Csv -Path $FilePath -Delimiter ";" -NoTypeInformation
     Show-Status info "Report exported to: $FilePath"
 }catch{
-    Show-Status error "Export attempt failed. Report saved under variable"
+    $Global:FullSharePermissions = $FinalReport
+    Show-Status error "Export attempt failed. Report saved under variable '`$FullSharePermissions'"
 }
