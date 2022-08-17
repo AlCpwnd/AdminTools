@@ -24,7 +24,9 @@ Scripts meant to facilitate the management of Exchange Online.
 
 Current scripts:
 - Add-CalendarPermission.ps1
+    - Simple script to add permissions to a calendar. Will automatically resolve the calendar name depending on the regional settings.
 - Exch_MailboxPermissionsReport.ps1
+    - Returns a report of all permissions users have on existing mailboxes
 
 ---
 ## Explorer: Windows File Explorer
@@ -32,14 +34,10 @@ Scripts meant to facilitate management of windows file explorer rights and their
 
 Current scripts:
 - Explorer_FolderInheritance.ps1
+    - Returns a list of all folders for which the permission inheritance has been broken.
 - Explorer_FullSharePermissions.ps1
+    - Improved version of Explorer_SharePermissionList.ps1
 - Explorer_SharePermissionList.ps1
+    - Returns a report of all permissions on existing shares and their subfolders.    
 
 ---
-### Explorer_FolderInheritance.ps1
-
-Will list all subfolders for which security permissions enhiritance has been disabled.
-For more info run:
-```
-Get-Help Folder_Inheritance.ps1 -Full
-```
