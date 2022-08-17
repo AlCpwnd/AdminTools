@@ -3,7 +3,7 @@ param(
     [Switch]$All
 )
 
-if($Computer){
+if($ShareName){
     $Shares = Get-SmbShare -Name $ShareName | Where-Object{$_.ShareType -eq "FileSystemDirectory" -and (Test-Path $_.Path)}
 }else{
     $Shares = Get-SmbShare | Where-Object{$_.ShareType -eq "FileSystemDirectory" -and (Test-Path $_.Path)}
