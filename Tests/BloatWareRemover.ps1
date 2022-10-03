@@ -4,7 +4,7 @@
 
 <#
 	#Disclaimer:#
-	"Menu" is a function by @chrisseroka
+	"Menu" is a module by @chrisseroka which I adapted.
 	https://github.com/chrisseroka/ps-menu
 #>
 
@@ -85,7 +85,11 @@ function Menu {
     if ($ReturnIndex -eq $false -and $pos -ne $null)
 	{
 		if ($Multiselect){
-			return $menuItems[$selection]
+			if($Selecytion){
+				return $menuItems[$selection]
+			}else{
+				return
+			}
 		}
 		else {
 			return $menuItems[$pos]
@@ -104,7 +108,7 @@ function Menu {
 
 # \_End of PsMenu_/
 
-function Print-Info{Param([Parameter(Mandatory)][String]$Txt)Write-Host "`n(i) $Txt"}µ
+function Print-Info{Param([Parameter(Mandatory)][String]$Txt)Write-Host "`n(i) $Txt"}
 function Print-Status{Param([Parameter(Mandatory)][String]$Txt)Write-Host "`n|>  $Txt"}
 
 Print-Info "Recovering computer information..."
@@ -116,6 +120,7 @@ $AppExceptions.Split("|") | ForEach-Object{$_}
 
 Print-Info "Recovering installed applications..."
 $AppsBloatWare = Get-AppxPackage -AllUsers | Where-Object{$_.Name -notmatch $AppExceptions}
+Print-Status "Please choose the applications to remove:"
 $AppUninstallName = Menu -menuItems $AppsBloatWare.Name -Multiselect -DefaultSelection $($AppsBloatWare.Name | Where-Object{$_ -match $Manufacturer})
 if(!$AppUninstallName){
 	Print-Info "No windows applications selected for removal"
@@ -126,5 +131,6 @@ if(!$AppUninstallName){
 	Get-AppxProvisionedPackage -Online | Where-Object{$AppUninstallName -contains $_.DisplayName} | Remove-AppxProvisionedPackage -Online | Out-Null
 }
 
+Print-Info "Recovering installed software..."
 $Soft = Get-WmiObject -Class Win32_Product
 $SoftBloatWare = $Soft | Where-Object{$_.Name -match $Manufacturer}
