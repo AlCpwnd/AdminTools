@@ -112,11 +112,10 @@ function Print-Info{Param([Parameter(Mandatory)][String]$Txt)Write-Host "`n(i) $
 function Print-Status{Param([Parameter(Mandatory)][String]$Txt)Write-Host "`n|>  $Txt"}
 
 Print-Info "Recovering computer information..."
-$PcInfo = Get-ComputerInfo
-$Manufacturer = $PcInfo.CsManufacturer
+$Manufacturer = (Get-ComputerInfo -Property CsManufacturer).CsManufacturer
 $AppExceptions = "Realtek|Intel|Microsoft|Windows"
 Print-Info "$($AppExceptions.Split("|").Count) exception(s) found:"
-$AppExceptions.Split("|") | ForEach-Object{$_}
+$AppExceptions.Split("|") | ForEach-Object{Write-Host "`t * $_"}
 
 Print-Info "Recovering installed applications..."
 $AppsBloatWare = Get-AppxPackage -AllUsers | Where-Object{$_.Name -notmatch $AppExceptions}
@@ -132,5 +131,10 @@ if(!$AppUninstallName){
 }
 
 Print-Info "Recovering installed software..."
-$Soft = Get-WmiObject -Class Win32_Product
-$SoftBloatWare = $Soft | Where-Object{$_.Name -match $Manufacturer}
+$Soft = Get-WmiObject -Class Win32_Product |Where-Object{$_.Vendor -notmatch $AppExceptions -and $_.Name}
+$SoftUninstall = Menu -menuItems $Soft.Name -Multiselect -DefaultSelection $($Soft | Where-Object{$_.Vendor -match $Manufacturer -or $_.Name -match $Manufacturer})
+if(!$SoftUninstall){
+	Print-Info "No software selected for uninstall..."
+}else{
+	Print-Status "Uninstalling applications..."
+}
