@@ -1,5 +1,5 @@
 param(
-    [Parameter(Position=0)][Array]$Path,
+    [Parameter(Position=0)][String]$Path,
     [Switch]$ExplodeGroups,
     [Switch]$Silent
 )
@@ -155,7 +155,7 @@ if($ExplodeGroups){
 
 try{
     $Date = Get-Date -Format yyyyMMdd
-    $FilePath = "$PSScriptRoot\$Date`_$Env:COMPUTERNAME`_$Status.csv"
+    $FilePath = "$PSScriptRoot\$Date`_$Path`_$Status.csv"
     $FinalReport | Export-Csv -Path $FilePath -Delimiter ";" -NoTypeInformation
     Show-Status info "Report exported to: $FilePath"
 }catch{
