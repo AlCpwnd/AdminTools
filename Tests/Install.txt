@@ -1,5 +1,0 @@
-Google.Chrome
-Adobe.Acrobat.Reader.64-bit
-Oracle.JavaRuntimeEnvironment
-Fortinet.FortiClientVPN
-7zip.7zip
