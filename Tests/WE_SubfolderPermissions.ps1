@@ -4,6 +4,8 @@ param(
     [Switch]$Silent
 )
 
+#|Variables|#
+
 if(!$Path){
     $Path = $PSScriptRoot
 }
@@ -13,8 +15,10 @@ $Inverted = @{
     BackgroundColor = $Host.UI.RawUI.ForegroundColor
 }
 
-function Print-Info{Param([Parameter(Mandatory,Position=0)][String]$Txt)if(!$Silent){Write-host "`n|> (i) $Txt"}}
-function Print-Warning{Param([Parameter(Mandatory,Position=0)][String]$Txt)if(!$Silent){Write-host "`n|> /!\ $Txt" @Inverted}}
+#|Fuctions|#
+
+function Print-Info{Param([Parameter(Mandatory,Position=0)][String]$Txt)if(!$Silent){Write-host "|> (i) $Txt"}}
+function Print-Warning{Param([Parameter(Mandatory,Position=0)][String]$Txt)if(!$Silent){Write-host "|> /!\ $Txt" @Inverted}}
 
 function Get-FolderPermission{
     [CmdletBinding()]
@@ -36,23 +40,55 @@ function Get-FolderPermission{
         $Permissions = (Get-Acl $FolderPath).Access
     }
 
-    $Report = foreach($Permission in $Permissions){
+    class FolderPerm {
+        [String]$Path
+        [String]$Identity
+        [Array]$Permissions
 
-        [PSCustomObject]@{
-            Path = $FolderPath
-            Identity = $Permission.IdentityReference
-            Permission = $Permission.FileSystemRights
+        FolderPerm(
+            [String]$p,
+            [String]$i,
+            [Array]$perm
+        ){
+            $this.Path = $p
+            $this.Identity = $i
+            $this.Permissions = $perm
         }
     }
 
+    $Report = foreach($Permission in $Permissions){
+        [FolderPerm]::new(
+            $FolderPath,
+            $Permission.IdentityReference,
+            $Permission.FileSystemRights
+        )
+    }
+
     return $Report
+
+    <#
+        .SYNOPSIS
+        List the permissions on a given folder.
+
+        .DESCRIPTION
+        Returns an array of all permission on a given folder.
+
+        .PARAMETER Path
+        Path to the starting directory of the script. All subfolders of that directory will be verified.
+        
+        .LINK
+        Get-ChildItem
+
+        .LINK
+        Get-Acl
+    #>
 }
 
 function Get-InheritanceBrokenFolders {
     param(
         [Parameter(Mandatory,Position=0)][string]$Path
     )
-    Print-Info "Recovering subfolders of: $Path"
+    Print-Info "Verifying inheritence for: $Path"
     $Folders = Get-ChildItem $Path -Directory -Recurse -ErrorAction Continue
 
     $i = 0
@@ -64,6 +100,7 @@ function Get-InheritanceBrokenFolders {
             $InheritedPermission = ($Access | Where-Object{$_.IsInherited}).Count
             if(!$InheritedPermission){
                 $Folder.FullName
+                Get-InheritanceBrokenFolders -Path $Folder.FullName
             }
         }catch{
             Print-Warning "Couldn't recover permissions from: $($Folder.FullName)"
@@ -72,7 +109,26 @@ function Get-InheritanceBrokenFolders {
     }
     Write-Progress -Activity "Verifying rights [$i/$($iMax)]" -Id 1 -ParentId 0 -Status "Done" -Completed
     return $Report
+
+    <#
+        .SYNOPSIS
+        Lists folder with broken inheritance.
+
+        .DESCRIPTION
+        Lists all subfolders that don't inhirit the rights of their parent folder and will recurse on those folders.
+
+        .PARAMETER Path
+        Path to the starting directory of the script. All subfolders of that directory will be verified.
+        
+        .LINK
+        Get-ChildItem
+
+        .LINK
+        Get-Acl
+    #>
 }
+
+#|Code|#
 
 $Folders = Get-ChildItem $Path -Directory
 
@@ -81,8 +137,7 @@ $jMax = $Folders.Count
 Print-Info "$jMax Folder(s) found"
 
 $Report = foreach($Folder in $Folders){
-    Print-Info "Starting with Share: $($Folder.Name)"
-    Write-Progress -Activity "Verifying permission" -Status $Folder.Name -Id 0 -PercentComplete (($j/$jMax)*100)
+    Write-Progress -Activity "Verifying inheritence" -Status $Folder.Name -Id 0 -PercentComplete (($j/$jMax)*100)
     $FolderPermissions = Get-FolderPermission -FolderPath $Folder.FullName
     $Exceptions = Get-InheritanceBrokenFolders -Path $Folder.FullName
     if($Exceptions){
@@ -91,7 +146,6 @@ $Report = foreach($Folder in $Folders){
             Get-FolderPermission -FolderPath $Exception
         }
     }
-    Print-Info "Done with Share: $($Folder.Name)"
     $FolderPermissions
     $j++
 }
@@ -102,24 +156,42 @@ if($ExplodeGroups){
     if(!$ModuleCheck){
         Print-Warning "ActiveDirectory module is missing from this device"
     }else{
+        class FolderPermExt {
+            [String]$Path
+            [String]$Group
+            [String]$Identity
+            [Array]$Permissions
+    
+            FolderPerm(
+                [String]$p,
+                [String]$g,
+                [String]$i,
+                [Array]$perm
+            ){
+                $this.Path = $p
+                $this.Group = $g
+                $this.Identity = $i
+                $this.Permissions = $perm
+            }
+        }
         $FinalReport = foreach($line in $Report){
             try{
                 $Members = Get-ADGroupMember $line.Identity.Value.Split("\")[1] -ErrorAction Stop
                 foreach($User in $Members){
-                    [PSCustomObject]@{
-                        Path = $line.Path
-                        Group = $line.Identity.Value.Split("\")[1]
-                        Identity = "$Env:USERDOMAIN\$($User.SamAccountName)"
-                        Permission = $line.Permission
-                    }
+                    [FolderPermExt]::new(
+                        $line.Path,
+                        $line.Identity.Value.Split("\")[1],
+                        "$Env:USERDOMAIN\$($User.SamAccountName)",
+                        $line.Permission
+                    )
                 }
             }catch{
-                [PSCustomObject]@{
-                    Path = $line.Path
-                    Group = "<Direct_Access>"
-                    Identity = $line.Identity
-                    Permission = $line.Permission
-                }
+                [FolderPermExt]::new(
+                    $line.Path,
+                    "<Direct_Access>",
+                    "$Env:USERDOMAIN\$($User.SamAccountName)",
+                    $line.Permission
+                )
             }
         }
         $Report = $FinalReport
