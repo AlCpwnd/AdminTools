@@ -1,5 +1,9 @@
 ﻿#Requires -Module ActiveDirectory
 
+<#
+    Test Script meant to play around with newly discovered (for me) PowerShell classes.
+#>
+
 $OrgUnit = Get-ADOrganizationalUnit -Filter *
 
 class OU {
@@ -7,10 +11,11 @@ class OU {
     [String]$Parent
     [String]$FullName
     [String]$Domain
+    [String]$OutPut
     hidden [Int]$Level
 }
 
-$Test = foreach($OU in $OrgUnit){
+$OUs = foreach($OU in $OrgUnit){
     $CN = $OU.DistinguishedName.Split(",") | Where-Object{$_ -match "OU="}
     $temp = [OU]::new()
     $temp.Name = $Ou.Name
@@ -20,3 +25,4 @@ $Test = foreach($OU in $OrgUnit){
     $temp.Level = $CN.Count
     $temp
 }
+
