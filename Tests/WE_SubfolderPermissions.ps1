@@ -8,8 +8,13 @@ if(!$Path){
     $Path = $PSScriptRoot
 }
 
+$Inverted = @{
+    ForegroundColor = $Host.UI.RawUI.BackgroundColor
+    BackgroundColor = $Host.UI.RawUI.ForegroundColor
+}
+
 function Print-Info{Param([Parameter(Mandatory,Position=0)][String]$Txt)if(!$Silent){Write-host "`n|> (i) $Txt"}}
-function Print-Warning{Param([Parameter(Mandatory,Position=0)][String]$Txt)if(!$Silent){Write-host "`n|> /!\ $Txt" -ForegroundColor $Host.PrivateData.WarningForegroundColor}}
+function Print-Warning{Param([Parameter(Mandatory,Position=0)][String]$Txt)if(!$Silent){Write-host "`n|> /!\ $Txt" @Inverted}}
 
 function Get-FolderPermission{
     [CmdletBinding()]
