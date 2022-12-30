@@ -1,5 +1,6 @@
 param(
     [Parameter(Position=0)][String]$Path,
+    [Array]$UserExceptions,
     [Switch]$ExplodeGroups,
     [Switch]$Silent
 )
@@ -227,3 +228,32 @@ try{
     $Global:FullSharePermissions = $FinalReport
     Print-Warning "Export attempt failed. Report saved under variable '`$FullSharePermissions'"
 }
+
+<#
+    .SYNOPSIS
+    Lists folders permissions.
+
+    .DESCRIPTION
+    Lists existing permissions on all first level subfolders. Will also verify if if any subfolders have broken inheritance.
+
+    .PARAMETER Path
+    Parent folder of which you want to verify the subfolders of.
+
+    .PARAMETER ExplodeGroups
+    Will return a report with the group members in addition to the group names. Will require the ActiveDirectory module to be installed.
+
+    .INPUTS
+    None, you cannot pipe data into this script.
+
+    .OUTPUTS
+    Array containing all permissions of the given folders.
+
+    .EXAMPLE
+    PS> WE_FolderPermission.ps1
+
+    .LINK
+    Get-ChildItem
+
+    .LINK
+    Get-Acl
+#>
