@@ -33,11 +33,12 @@ Current scripts:
 Scripts meant to facilitate management of windows file explorer rights and their inheritance.
 
 Current scripts:
-- Explorer_FolderInheritance.ps1
+- WE_FolderInheritance.ps1
     - Returns a list of all folders for which the permission inheritance has been broken.
-- Explorer_FullSharePermissions.ps1
-    - Improved version of Explorer_SharePermissionList.ps1
-- Explorer_SharePermissionList.ps1
-    - Returns a report of all permissions on existing shares and their subfolders.    
+- WE_SharePermissionList.ps1
+    - Will return an array detailing the permissions on all existing shares of the current server.
+- WE_FolderPermissions.ps1
+   - Will go over the given path's child folders and return an array of their security permissions.
+   - If one of the children has broken inheritance, an additionnal entry will be made for that folder in the report.
 
 ---
