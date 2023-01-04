@@ -13,6 +13,21 @@ class OU {
     [String]$Domain
     [String]$OutPut
     hidden [Int]$Level
+    OU(
+    	$n,
+	$p,
+	$f,
+	$d,
+	$o,
+	$l
+    ){
+    	$this.Name = $n
+	$this.Parent = $p
+	$this.FullName = $f
+	$this.Domain = $d
+	$this.OutPut = $p
+	$this.Level = $l
+    }
 }
 
 $OUs = foreach($OU in $OrgUnit){
