@@ -21,6 +21,8 @@ Parameters:
 - ShareName: Will return a report on the permissions of the Share with the given name.
 - All: Will return a report of all existing shares.
 
+---
+
 ## WE_FolderPermissions.ps1
 Will go over a given path and return the permissions. Will also verify if any subfolders don't have broken inheritance.
 
@@ -31,3 +33,10 @@ Parameters:
 - UserExceptions: User you don't want to appear within the final report.
 - ExplodeGroups: Will attempt to generate a report with the groupmembers if groups are found to be used for access. **This option will verify if the "ActiveDirectory" module is available.**
 - Silent: Will show no feedback or progress during the execution.
+
+---
+
+## WE_UsbDriveReconnect.ps1
+Script will assign the given drive letter to a USB drive that doesn't have an assigned letter.
+
+Edit the `$DriveLetter` variable to change the letter the drive will be assigned.
