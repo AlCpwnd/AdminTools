@@ -1,8 +1,8 @@
+[CmdletBinding()]
 param(
     [Parameter(Position=0)][String]$Path,
     [Array]$UserExceptions,
-    [Switch]$ExplodeGroups,
-    [Switch]$Silent
+    [Switch]$ExplodeGroups
 )
 
 #|Variables|#
@@ -11,15 +11,7 @@ if(!$Path){
     $Path = $PSScriptRoot
 }
 
-$Inverted = @{
-    ForegroundColor = $Host.UI.RawUI.BackgroundColor
-    BackgroundColor = $Host.UI.RawUI.ForegroundColor
-}
-
-#|Fuctions|#
-
-function Print-Info{Param([Parameter(Mandatory,Position=0)][String]$Txt)if(!$Silent){Write-host "|> (i) $Txt"}}
-function Print-Warning{Param([Parameter(Mandatory,Position=0)][String]$Txt)if(!$Silent){Write-host "|> /!\ $Txt" @Inverted}}
+#|Functions|#
 
 function Get-FolderPermission{
     [CmdletBinding()]
@@ -29,11 +21,10 @@ function Get-FolderPermission{
     )
 
     if(!(Test-Path $FolderPath -PathType Container)){
-        Print-Warning "Invalid folder path: $FolderPath"
-        return
+        throw "Invalid folder path: $FolderPath"
     }
 
-    Print-Info "Recovering permissions for: $FolderPath"
+    Write-Verbose "Recovering permissions for: $FolderPath"
 
     if(!$All){
         $Permissions = (Get-Acl $FolderPath).Access | Where-Object{$_.IdentityReference -match $Env:USERDOMAIN}
@@ -44,12 +35,12 @@ function Get-FolderPermission{
     class FolderPerm {
         [String]$Path
         [String]$Identity
-        [Array]$Permissions
+        [String]$Permissions
 
         FolderPerm(
             [String]$p,
             [String]$i,
-            [Array]$perm
+            [String]$perm
         ){
             $this.Path = $p
             $this.Identity = $i
@@ -61,7 +52,7 @@ function Get-FolderPermission{
         [FolderPerm]::new(
             $FolderPath,
             $Permission.IdentityReference,
-            $Permission.FileSystemRights
+            $($Permission.FileSystemRights -join ",")
         )
     }
 
@@ -89,8 +80,8 @@ function Get-InheritanceBrokenFolders {
     param(
         [Parameter(Mandatory,Position=0)][string]$Path
     )
-    Print-Info "Verifying inheritence for: $Path"
-    $Folders = Get-ChildItem $Path -Directory -Recurse -ErrorAction Continue
+    Write-Verbose "Verifying inheritence for: $Path"
+    $Folders = Get-ChildItem $Path -Directory -Recurse -ErrorAction SilentlyContinue
 
     $i = 0
     $iMax = $Folders.Count
@@ -104,11 +95,11 @@ function Get-InheritanceBrokenFolders {
                 Get-InheritanceBrokenFolders -Path $Folder.FullName
             }
         }catch{
-            Print-Warning "Couldn't recover permissions from: $($Folder.FullName)"
+            Write-Warning "Couldn't recover permissions from: $($Folder.FullName)"
         }
         $i++
     }
-    Write-Progress -Activity "Verifying rights [$i/$($iMax)]" -Id 1 -ParentId 0 -Status "Done" -Completed
+    Write-Progress -Activity "Verifying rights [$i/$iMax]" -Id 1 -ParentId 0 -Status "Done" -Completed
     return $Report
 
     <#
@@ -135,15 +126,15 @@ $Folders = Get-ChildItem $Path -Directory
 
 $j = 0
 $jMax = $Folders.Count
-Print-Info "$jMax Folder(s) found"
+Write-Verbose "$jMax Folder(s) found"
 
 $Report = foreach($Folder in $Folders){
-    Write-Progress -Activity "Verifying inheritence" -Status $Folder.Name -Id 0 -PercentComplete (($j/$jMax)*100)
+    Write-Progress -Activity "Verifying inheritence [$i/$iMax]" -Status $Folder.Name -Id 0 -PercentComplete (($j/$jMax)*100)
     $FolderPermissions = Get-FolderPermission -FolderPath $Folder.FullName
     $Exceptions = Get-InheritanceBrokenFolders -Path $Folder.FullName
     if($Exceptions){
         $FolderPermissions += foreach($Exception in $Exceptions){
-            Print-Info "Inheritance break found: $Exception" 
+            Write-Verbose "Inheritance break found: $Exception" 
             Get-FolderPermission -FolderPath $Exception
         }
     }
@@ -155,19 +146,19 @@ Write-Progress -Activity "Verifying permission" -Status $Folder.Name -Id 0 -Comp
 if($ExplodeGroups){
     $ModuleCheck = Get-Module -Name ActiveDirectory -ListAvailable
     if(!$ModuleCheck){
-        Print-Warning "ActiveDirectory module is missing from this device"
+        Write-Warning "ActiveDirectory module is missing from this device"
     }else{
         class FolderPermExt {
             [String]$Path
             [String]$Group
             [String]$Identity
-            [Array]$Permissions
+            [String]$Permissions
     
-            FolderPerm(
+            FolderPermExt(
                 [String]$p,
                 [String]$g,
                 [String]$i,
-                [Array]$perm
+                [String]$perm
             ){
                 $this.Path = $p
                 $this.Group = $g
@@ -175,15 +166,18 @@ if($ExplodeGroups){
                 $this.Permissions = $perm
             }
         }
+        $i = 0
+        $iMax = $Report.Count
         $FinalReport = foreach($line in $Report){
+            Write-Progress -Activity "Documenting groupmembership" -Status $line.Identity -PercentComplete (($i/$iMax)*100)
             try{
-                $Members = Get-ADGroupMember $line.Identity.Value.Split("\")[1] -ErrorAction Stop
+                $Members = Get-ADGroupMember $line.Identity.Split("\")[1] -ErrorAction Stop
                 foreach($User in $Members){
                     [FolderPermExt]::new(
                         $line.Path,
-                        $line.Identity.Value.Split("\")[1],
+                        $line.Identity.Split("\")[1],
                         "$Env:USERDOMAIN\$($User.SamAccountName)",
-                        $line.Permission
+                        $line.Permissions
                     )
                 }
             }catch{
@@ -191,21 +185,22 @@ if($ExplodeGroups){
                     $line.Path,
                     "<Direct_Access>",
                     "$Env:USERDOMAIN\$($User.SamAccountName)",
-                    $line.Permission
+                    $line.Permissions
                 )
             }
+            $i++
         }
         $Report = $FinalReport
     }
 }
 
 if($UserExceptions){
-    Print-Info "Removing UserExceptions from the report"
+    Write-Verbose "Removing UserExceptions from the report"
     $Filter = foreach($User in $UserExceptions){
         try{
             "$Env:USERDOMAIN\$((Get-ADUser $User).SamAccountName)"
         }catch{
-            Print-Warning "Invalid exception: $User"
+            Write-Warning "Invalid exception: $User"
         }
     }
     $FinalReport = $Report | Where-Object{$Filter -notcontains $_.Identity}
@@ -221,12 +216,12 @@ if($ExplodeGroups){
 
 try{
     $Date = Get-Date -Format yyyyMMdd
-    $FilePath = "$PSScriptRoot\$Date`_$Status.csv"
+    $FilePath = "$PSScriptRoot\$Date`_$Status`_$(($Path.Split("\")|Where-Object{$_ -ne `"`"})[-1]).csv"
     $FinalReport | Export-Csv -Path $FilePath -Delimiter ";" -NoTypeInformation
-    Print-Info "Report exported to: $FilePath"
+    Write-Verbose "Report exported to: $FilePath"
 }catch{
     $Global:FullSharePermissions = $FinalReport
-    Print-Warning "Export attempt failed. Report saved under variable '`$FullSharePermissions'"
+    Write-Warning "Export attempt failed. Report saved under variable '`$FullSharePermissions'"
 }
 
 <#
