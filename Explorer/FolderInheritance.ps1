@@ -1,13 +1,27 @@
 param(
-    [Parameter(Position=0)]
-    [string]$Path
+    [Parameter(Position=0)][string]$Path,
+    [Int32]$Depth
 )
 Write-Host "`n`t[i]Recovering folders"
-if($Path){
-    $Folders = Get-ChildItem $Path -Recurse | Where-Object{$_.PSIsContainer}
-}else{    
-    $Folders = Get-ChildItem -Recurse | Where-Object{$_.PSIsContainer}
+
+$Parameters = @{
+    Path = ""
+    Directory = $true
+    Recurse = $true
 }
+
+if($Depth){
+    $Parameters | Add-Member -MemberType NoteProperty -Name Depth -Value $Depth
+}
+
+if($Path){
+    $Parameters.Path = $Path
+}else{    
+    $Parameters.Path = $PSScriptRoot
+}
+
+$Folders = Get-ChildItem @Parameters
+
 $i = 0
 $iMax = $Folders.Count
 $Report = foreach($Folder in $Folders){
@@ -39,6 +53,9 @@ if($Report.Count -le 30){
     .PARAMETER Path
     Path to the starting directory of the script. All subfolders of that directory will be verified.
 
+    .PARAMETER Depth
+    Depth of subfolder you want to run the script on. This is mainly meant to be used on large folder structures.
+
     .INPUTS
     None, you cannot pipe data into this script.
 
@@ -50,10 +67,13 @@ if($Report.Count -le 30){
 
     .EXAMPLE
     PS> Folder_Inheritance.ps1 -Path E:\Data\
-    File.doc
 
     .EXAMPLE
     PS> Folder_Inheritance.ps1 E:\Data
+
+    
+    .EXAMPLE
+    PS> Folder_Inheritance.ps1 E:\Data -Depth 4
 
     .LINK
     Get-ChildItem
