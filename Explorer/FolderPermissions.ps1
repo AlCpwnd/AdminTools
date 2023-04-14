@@ -171,11 +171,21 @@ if($ExplodeGroups){
         $FinalReport = foreach($line in $Report){
             Write-Progress -Activity "Documenting groupmembership" -Status $line.Identity -PercentComplete (($i/$iMax)*100)
             try{
-                $Members = Get-ADGroupMember $line.Identity.Split("\")[1] -ErrorAction Stop
+                $Group = $line.Identity.Split("\")[1]
+                if($Group -eq 'Domain Users'){
+                    [FolderPermExt]::new(
+                        $line.Path,
+                        $Group,
+                        '<Domain Users>',
+                        $line.Permissions
+                    )
+                    continue
+                }
+                $Members = Get-ADGroupMember -Identity $Group -ErrorAction Stop
                 foreach($User in $Members){
                     [FolderPermExt]::new(
                         $line.Path,
-                        $line.Identity.Split("\")[1],
+                        $Group,
                         "$Env:USERDOMAIN\$($User.SamAccountName)",
                         $line.Permissions
                     )
