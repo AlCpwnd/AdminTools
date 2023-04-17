@@ -1,14 +1,21 @@
 [CmdletBinding()]
 param(
-    [Parameter(Position=0)][String]$Path,
-    [Array]$UserExceptions,
-    [Switch]$ExplodeGroups
+    [Parameter(ParameterSetName='ListFolders',Position=0)][String]$Path,
+    [Parameter(ParameterSetName='File')][String]$File,
+    [Parameter(ParameterSetName='ListFolders')][Parameter(ParameterSetName='File')][Array]$UserExceptions,
+    [Parameter(ParameterSetName='ListFolders')][Parameter(ParameterSetName='File')][Switch]$ExplodeGroups
 )
 
 #|Variables|#
-
-if(!$Path){
-    $Path = $PSScriptRoot
+switch ($PsCmdlet.ParameterSetName) {
+    'LisFolders' {
+        if(!$Path){
+            $Path = $PSScriptRoot
+        }
+    }
+    'File' {
+        $Folders = Get-Content -Path $File
+    }
 }
 
 #|Functions|#
@@ -122,26 +129,43 @@ function Get-InheritanceBrokenFolders {
 
 #|Code|#
 
-$Folders = Get-ChildItem $Path -Directory
-
-$j = 0
-$jMax = $Folders.Count
-Write-Verbose "$jMax Folder(s) found"
-
-$Report = foreach($Folder in $Folders){
-    Write-Progress -Activity "Verifying inheritence [$i/$iMax]" -Status $Folder.Name -Id 0 -PercentComplete (($j/$jMax)*100)
-    $FolderPermissions = Get-FolderPermission -FolderPath $Folder.FullName
-    $Exceptions = Get-InheritanceBrokenFolders -Path $Folder.FullName
-    if($Exceptions){
-        $FolderPermissions += foreach($Exception in $Exceptions){
-            Write-Verbose "Inheritance break found: $Exception" 
-            Get-FolderPermission -FolderPath $Exception
+switch ($PsCmdlet.ParameterSetName) {
+    'LisFolders' {
+        $Folders = Get-ChildItem $Path -Directory
+        
+        $j = 0
+        $jMax = $Folders.Count
+        Write-Verbose "$jMax Folder(s) found"
+        
+        $Report = foreach($Folder in $Folders){
+            Write-Progress -Activity "Verifying inheritence [$i/$iMax]" -Status $Folder.Name -Id 0 -PercentComplete (($j/$jMax)*100)
+            $FolderPermissions = Get-FolderPermission -FolderPath $Folder.FullName
+            $Exceptions = Get-InheritanceBrokenFolders -Path $Folder.FullName
+            if($Exceptions){
+                $FolderPermissions += foreach($Exception in $Exceptions){
+                    Write-Verbose "Inheritance break found: $Exception" 
+                    Get-FolderPermission -FolderPath $Exception
+                }
+            }
+            $FolderPermissions
+            $j++
         }
+        Write-Progress -Activity "Verifying permission" -Status $Folder.Name -Id 0 -Completed
     }
-    $FolderPermissions
-    $j++
+    'File' {
+        $j = 0
+        $jMax = $Folders.Count
+        Write-Verbose "$jMax Folder(s) found"
+        
+        $Report = foreach($Folder in $Folders){
+            Write-Progress -Activity "Verifying inheritence [$i/$iMax]" -Status $Folder.Name -Id 0 -PercentComplete (($j/$jMax)*100)
+            Get-FolderPermission -FolderPath $Folder.FullName
+            $j++
+        }
+        Write-Progress -Activity "Verifying permission" -Status $Folder.Name -Id 0 -Completed
+    }
 }
-Write-Progress -Activity "Verifying permission" -Status $Folder.Name -Id 0 -Completed
+
 
 if($ExplodeGroups){
     $ModuleCheck = Get-Module -Name ActiveDirectory -ListAvailable
@@ -240,6 +264,9 @@ try{
 
     .DESCRIPTION
     Lists existing permissions on all first level subfolders. Will also verify if if any subfolders have broken inheritance.
+
+    .PARAMETER File
+    Path to the file report generated using FolderInheritance.ps1
 
     .PARAMETER Path
     Parent folder of which you want to verify the subfolders of.
