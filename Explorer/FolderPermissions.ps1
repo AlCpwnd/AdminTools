@@ -1,14 +1,16 @@
 [CmdletBinding()]
 param(
-    [Parameter(ParameterSetName='ListFolders',Position=0)][String]$Path,
-    [Parameter(ParameterSetName='File')][String]$File,
+    [Parameter(ParameterSetName='ListFolders',Position=0,Mandatory)][String]$Path,
+    [Parameter(ParameterSetName='File',Mandatory)][String]$File,
     [Parameter(ParameterSetName='ListFolders')][Parameter(ParameterSetName='File')][Array]$UserExceptions,
     [Parameter(ParameterSetName='ListFolders')][Parameter(ParameterSetName='File')][Switch]$ExplodeGroups
 )
 
 #|Variables|#
+$StartTime = Get-Date
+
 switch ($PsCmdlet.ParameterSetName) {
-    'LisFolders' {
+    'ListFolders' {
         if(!$Path){
             $Path = $PSScriptRoot
         }
@@ -28,7 +30,12 @@ function Get-FolderPermission{
     )
 
     if(!(Test-Path $FolderPath -PathType Container)){
-        throw "Invalid folder path: $FolderPath"
+        return
+    }
+
+    if($FolderPath.Lenth -gt 260){
+        Write-Host "Path too long: $FolderPath" -ForegroundColor Red
+        return
     }
 
     Write-Verbose "Recovering permissions for: $FolderPath"
@@ -130,15 +137,18 @@ function Get-InheritanceBrokenFolders {
 #|Code|#
 
 switch ($PsCmdlet.ParameterSetName) {
-    'LisFolders' {
+    'ListFolders' {
         $Folders = Get-ChildItem $Path -Directory
+
+        Write-Verbose "Recovering parent folder permissions"
+        $ParentFolderPermissions = Get-FolderPermission -FolderPath $Path
         
         $j = 0
         $jMax = $Folders.Count
-        Write-Verbose "$jMax Folder(s) found"
+        Write-Verbose "$jMax Child-Folder(s) found"
         
         $Report = foreach($Folder in $Folders){
-            Write-Progress -Activity "Verifying inheritence [$i/$iMax]" -Status $Folder.Name -Id 0 -PercentComplete (($j/$jMax)*100)
+            Write-Progress -Activity "Verifying inheritence [$j/$jMax]" -Status $Folder.Name -Id 0 -PercentComplete (($j/$jMax)*100)
             $FolderPermissions = Get-FolderPermission -FolderPath $Folder.FullName
             $Exceptions = Get-InheritanceBrokenFolders -Path $Folder.FullName
             if($Exceptions){
@@ -150,6 +160,8 @@ switch ($PsCmdlet.ParameterSetName) {
             $FolderPermissions
             $j++
         }
+
+        $Report += $ParentFolderPermissions
         Write-Progress -Activity "Verifying permission" -Status $Folder.Name -Id 0 -Completed
     }
     'File' {
@@ -158,14 +170,17 @@ switch ($PsCmdlet.ParameterSetName) {
         Write-Verbose "$jMax Folder(s) found"
         
         $Report = foreach($Folder in $Folders){
-            Write-Progress -Activity "Verifying inheritence [$i/$iMax]" -Status $Folder.Name -Id 0 -PercentComplete (($j/$jMax)*100)
+            Write-Progress -Activity "Verifying inheritence [$i/$iMax]" -Status $Folder -Id 0 -PercentComplete (($j/$jMax)*100)
             Get-FolderPermission -FolderPath $Folder.FullName
             $j++
         }
-        Write-Progress -Activity "Verifying permission" -Status $Folder.Name -Id 0 -Completed
+        Write-Progress -Activity "Verifying permission" -Status $Folder -Id 0 -Completed
     }
 }
 
+if(!$Report){
+    throw 'No permissions to found. Aborting script.'
+}
 
 if($ExplodeGroups){
     $ModuleCheck = Get-Module -Name ActiveDirectory -ListAvailable
@@ -218,7 +233,7 @@ if($ExplodeGroups){
                 [FolderPermExt]::new(
                     $line.Path,
                     "<Direct_Access>",
-                    "$Env:USERDOMAIN\$($User.SamAccountName)",
+                    $line.Identity,
                     $line.Permissions
                 )
             }
@@ -252,11 +267,17 @@ try{
     $Date = Get-Date -Format yyyyMMdd
     $FilePath = "$PSScriptRoot\$Date`_$Status`_$(($Path.Split("\")|Where-Object{$_ -ne `"`"})[-1]).csv"
     $FinalReport | Export-Csv -Path $FilePath -Delimiter ";" -NoTypeInformation
-    Write-Verbose "Report exported to: $FilePath"
+    Write-Host "[Report exported to: $FilePath]"
 }catch{
     $Global:FullSharePermissions = $FinalReport
-    Write-Warning "Export attempt failed. Report saved under variable '`$FullSharePermissions'"
+    Write-Warning "[Export attempt failed. Report saved under variable '`$FullSharePermissions']"
 }
+
+$EndTime = Get-Date
+$EndReport = "\_Start Time:`t$StartTime",
+    "\_EndTime:`t$EndTime",
+    "\_Duration:`t$($EndTime-$StartTime)"
+$EndReport | ForEach-Object{Write-Host $_}
 
 <#
     .SYNOPSIS
