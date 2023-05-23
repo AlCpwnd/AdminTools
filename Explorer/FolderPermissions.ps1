@@ -102,7 +102,7 @@ function Get-InheritanceBrokenFolders {
     $Report = foreach($Folder in $Folders){
         Write-Progress -Activity "Verifying rights [$i/$($iMax)]" -Status $Folder.Name -PercentComplete ($i/$iMax*100) -Id 1 -ParentId 0
         try{
-            $Access = Get-Acl -Path $Folder.FullName | Select-Object -ExpandProperty Access
+            $Access = Get-Acl -Path $Folder.FullName -ErrorAction Stop | Select-Object -ExpandProperty Access
             $InheritedPermission = ($Access | Where-Object{$_.IsInherited}).Count
             if(!$InheritedPermission){
                 $Folder.FullName
@@ -137,27 +137,27 @@ function Get-InheritanceBrokenFolders {
 #|Code|#
 
 switch ($PsCmdlet.ParameterSetName) {
-    'ListFolders' {
-        $Folders = Get-ChildItem $Path -Directory
-
+    'ListFolders' {        
         Write-Verbose "Recovering parent folder permissions"
         $ParentFolderPermissions = Get-FolderPermission -FolderPath $Path
         
+        $Folders = Get-InheritanceBrokenFolders $Path
+
         $j = 0
         $jMax = $Folders.Count
-        Write-Verbose "$jMax Child-Folder(s) found"
+        Write-Verbose "$jMax SubFolder(s) to be documented."
         
         $Report = foreach($Folder in $Folders){
-            Write-Progress -Activity "Verifying inheritence [$j/$jMax]" -Status $Folder.Name -Id 0 -PercentComplete (($j/$jMax)*100)
-            $FolderPermissions = Get-FolderPermission -FolderPath $Folder.FullName
-            $Exceptions = Get-InheritanceBrokenFolders -Path $Folder.FullName
-            if($Exceptions){
-                $FolderPermissions += foreach($Exception in $Exceptions){
-                    Write-Verbose "Inheritance break found: $Exception" 
-                    Get-FolderPermission -FolderPath $Exception
-                }
-            }
-            $FolderPermissions
+            Write-Progress -Activity "Recovering Permissions [$j/$jMax]" -Status $Folder.Name -Id 0 -PercentComplete (($j/$jMax)*100)
+            Get-FolderPermission -FolderPath $Folder.FullName
+            # $Exceptions = Get-InheritanceBrokenFolders -Path $Folder.FullName
+            # if($Exceptions){
+            #     $FolderPermissions += foreach($Exception in $Exceptions){
+            #         Write-Verbose "Inheritance break found: $Exception" 
+            #         Get-FolderPermission -FolderPath $Exception
+            #     }
+            # }
+            # $FolderPermissions
             $j++
         }
 
