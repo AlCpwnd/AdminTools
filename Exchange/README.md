@@ -15,3 +15,7 @@ Parameters:
 ## Exch_MailboxPermissionsReport.ps1
 Will return a csv-file containing all non-default permissions on all mailboxes within a tenant.
 > The execution time of this script is directly proportional to the amount of mailboxes you have in your tenant. Keep that in mind.
+
+## PermissionCleanup.ps1
+Will remove existing permissions linked to removed users by removing permissions where the user is only shown using a SID.
+Will also generate a log file containing the removed permissions, unless the `NoLogs` switch is used.

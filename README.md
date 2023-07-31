@@ -27,6 +27,8 @@ Current scripts:
     - Simple script to add permissions to a calendar. Will automatically resolve the calendar name depending on the regional settings.
 - Exch_MailboxPermissionsReport.ps1
     - Returns a report of all permissions users have on existing mailboxes
+- PermissionCleanup.ps1
+    - Removes mailox- and recipient-permissions for users that no longer exist within the Azure Active Directory
 
 ---
 ## Explorer: Windows File Explorer
