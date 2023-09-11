@@ -3,6 +3,7 @@
 #=Parameters:=====================================================#
 
 # Organizational Unit you want to verify.
+# Leaving it empty will recover all AD users.
 $OU = ""
 # Amount of days without user login activity before it is disabled.
 # Leaving it as 0 will skip the test.
