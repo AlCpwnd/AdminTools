@@ -1,4 +1,4 @@
-#Requires -Modules ActiveDirectory
+#Requires -Modules ActiveDirectory -RunAsAdministrator
 
 #=Parameters:=====================================================#
 
@@ -18,7 +18,7 @@ $TestRun = $true
 
 $Parameters = @{
     Filter = {Enabled -eq $true}
-    Properties = 'lastLogonDate','whenCreated','distinguishedName'
+    Properties = 'lastLogonDate','whenCreated'
 }
 
 if($OU){
@@ -28,12 +28,13 @@ if($OU){
 $Users = Get-ADUser @Parameters
 
 if($LogonTreshold){
+    $LogonReport = @()
     $ActiveUsers = $Users | Where-Object{$_.LastLogonDate}
     $Limit = (Get-Date).AddDays($LogonTreshold*-1)
     foreach($User in $ActiveUsers){
         if($User.LastLogonDate -lt $Limit){
             if($TestRun){
-                Write-Host "LogonTreshold: $($User.UserPrincipalName)" -ForegroundColor Yellow
+                $LogonReport += $User | Select-Object SAMAccountName,LastLogonDate
             }else{
                 $User.Enabled = $false
                 $User.Description += "[UserDisable.ps1:$(Get-Date -Format dd/MM/yyyy)]"
@@ -41,20 +42,29 @@ if($LogonTreshold){
             }
         }
     }
+    if($TestRun){
+        Write-Host "Users exceeding the logon treshold $LogonTreshold days: $($LogonReport.Count) found."
+        $LogonReport | Out-Host
+    }
 }
 
 if($InactiveTreshold){
+    $InactiveReport = @()
     $InactiveUsers = $Users | Where-Object{-not $_.LastLogonDate}
     $Limit = (Get-Date).AddDays($InactiveTreshold*-1)
     foreach($User in $InactiveUsers){
         if($User.WhenCreated -lt $Limit){
             if($TestRun){
-                Write-Host "InactiveTreshold: $($User.UserPrincipalName)" -ForegroundColor Yellow
+                $InactiveReport += $User | Select-Object SAMAccountName,whenCreated
             }else{
                 $User.Enabled = $false
                 $User.Description += "[UserDisable.ps1:$(Get-Date -Format dd/MM/yyyy)]"
                 Set-ADUser -Instance $User
             }
         }
+    }
+    if($TestRun){
+        Write-Host "Users exceeding the inactivity treshold $InactiveTreshold days: $($InactiveReport.Count) found."
+        $InactiveReport | Out-Host
     }
 }
