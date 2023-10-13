@@ -1,3 +1,10 @@
+param(
+    [String]$OU,
+    [Int32]$LogonTreshold,
+    [Int32]$InactiveTreshold,
+    [Switch]$TestRun
+)
+
 #Requires -Modules ActiveDirectory -RunAsAdministrator
 
 #=Parameters:=====================================================#
@@ -69,3 +76,46 @@ if($InactiveTreshold){
         $InactiveReport | Out-Host
     }
 }
+
+<#
+    .SYNOPSIS
+    Script disabling inactive or unused users.
+
+    .DESCRIPTION
+    Script goes over the given OU/AD and either lists or disables the users
+    corresponding to the given tresholds.
+
+    .INPUTS
+    None. You can't pipe objects into this script.
+
+    .OUTPUTS
+    If running using the $TestRun script, a list of the affected users will
+    be outputted onto the host.
+
+    .PARAMETER OU
+    Organizational Unit you want to restrict the script to.
+
+    .PARAMETER LogonTreshold
+    Amount of days without user login activity before it is disabled.
+
+    .PARAMETER InactiveTreshold
+    Amount of days a newly created user can exist without loggin in.
+
+    .PARAMETER TestRun
+    Enabling this will only list the users instead of disabling them.
+
+    .EXAMPLE
+    PS> UserDisable.ps1 -OU "OU=Finance,OU=UserAccounts,DC=Contosco,DC=local" -LogonTreshold 30
+
+    .EXAMPLE
+    PS> UserDisable.ps1 -InactiveTreshold 60 -TestRun
+
+    .LINK
+    Get-ADUser
+
+    .LINK
+    Send-MailMessage
+
+    .LINK
+    Get-GPOReport
+#>
