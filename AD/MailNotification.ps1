@@ -93,7 +93,7 @@ foreach($User in $Users){
     $Days
 
     if($Days -le $PswdWarning){
-        $Parameters.Subject = "Wachtwoord vervalt over $Days dagen"
+        $Parameters.Subject = "Password expires within $Days days"
         $Parameters.Body = "
             <p>Dear $($User.DisplayName),<br>
             <p>You password expires in $Days day(s).
@@ -118,3 +118,29 @@ if($MailCount){
 }
 
 Add-Log $LogPath "Script stopped"
+
+<#
+    .SYNOPSIS
+    Script sending mail notification when password is about to expire.
+
+    .DESCRIPTION
+    Sends a mail to user for which the password is about to expire.
+    Also specifies the amount of days remaining.
+    All parameters are directly defined within the script.
+    See 'Settings' section.
+
+    .INPUTS
+    None. You can't pipe objects into this script.
+
+    .OUTPUTS
+    The script will generate logs in order to keep track of mails sent.
+
+    .LINK
+    Get-ADUser
+
+    .LINK
+    Send-MailMessage
+
+    .LINK
+    Get-GPOReport
+#>
