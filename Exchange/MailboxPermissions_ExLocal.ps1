@@ -4,7 +4,7 @@
 )
 
 # Script meant for reporting mailbox permissions.
-$Mailboxes = Get-Mailbox
+$Mailboxes = Get-Mailbox -ResultSize Unlimited
 
 # Cancels the script in case no mailboxes are found.
 if(!$Mailboxes){
