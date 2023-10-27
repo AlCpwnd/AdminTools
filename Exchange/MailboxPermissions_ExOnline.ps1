@@ -5,10 +5,10 @@ param(
 #Requires -Modules ExchangeOnlineManagement
 
 try{
-    $Mailboxes = Get-EXOMailbox
+    $Mailboxes = Get-EXOMailbox -ResultSize Unlimited
 }catch{
     Connect-ExchangeOnline
-    $Mailboxes = Get-EXOMailbox
+    $Mailboxes = Get-EXOMailbox -ResultSize Unlimited
 }
 
 $i = 0
