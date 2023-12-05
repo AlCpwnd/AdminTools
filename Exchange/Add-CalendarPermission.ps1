@@ -6,13 +6,13 @@ param(
 
 function Get-CalendarFolder{
     param(
-        [Parameter(Mandatory)][string]$User
+        [Parameter(Mandatory)]
+        [string]$User
     )
     try{
         $Calendar = (Get-EXOMailboxFolderStatistics -Identity $User -Folderscope Calendar | Where-Object{$_.FolderType -eq "Calendar"}).Identity.Replace("\",":\")
     }catch{
-        Write-Host "Invalid User: $User" -ForegroundColor Red
-        return
+        Throw "Invalid User: $User"
     }
     return $Calendar
 }
