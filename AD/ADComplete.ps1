@@ -26,6 +26,7 @@ foreach($User in $Users){
     }
     if($Change){
         $Changed += $User
+        Set-ADUser -Instance $User
     }
 }
 
