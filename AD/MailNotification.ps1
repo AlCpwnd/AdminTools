@@ -9,6 +9,7 @@
         $from = "noreply@contosco.com"
         $TestMail = "" # If given, will test the server setting by attempting to send a mail to the given email address
     # Logs : #
+        $IgnoreExpiredPswd = $false # If enabled, won't log users 
         $Log = $true # Set to $false to disable logging
         $LogPath = "" # ex: C:\Test.txt , default is $PSScriptRoot\Logs.txt
 
@@ -77,9 +78,9 @@ if($TestMail){
     }
 }
 
-$Users = Get-ADUser -filter {Enabled -eq $True -and PasswordNeverExpires -eq $False} -Properties DisplayName,msDS-UserPasswordExpiryTimeComputed,proxyAddresses,PasswordExpired | Where-Object{!$_.PasswordExpired} | Select-Object "Displayname",
+$Users = Get-ADUser -filter {Enabled -eq $True -and PasswordNeverExpires -eq $False} -Properties DisplayName,msDS-UserPasswordExpiryTimeComputed,proxyAddresses,PasswordExpired | Select-Object "Displayname",
 @{Name="ExpiryDate";Expression={[datetime]::FromFileTime($_."msDS-UserPasswordExpiryTimeComputed")}},
-@{Name="Mail";Expression={($_.proxyAddresses | Where-Object{$_ -cmatch "SMTP"}).Split(":")[1]}}
+@{Name="Mail";Expression={($_.proxyAddresses | Where-Object{$_ -cmatch "SMTP"}).Split(":")[1]}}, PasswordExpired
 
 Add-Log $LogPath "$($User.count) user(s) found. Starting password verification."
 
@@ -88,26 +89,30 @@ $MailCount = 0
 
 foreach($User in $Users){
     if(!$User.Mail){Continue}
-    Write-Host $User.Displayname
-    $Days = ($User.ExpiryDate - $Today).Days
-    $Days
-
-    if($Days -le $PswdWarning){
-        $Parameters.Subject = "Password expires within $Days days"
-        $Parameters.Body = "
-            <p>Dear $($User.DisplayName),<br>
-            <p>You password expires in $Days day(s).
-            In order to change it, please use Ctrl+Alt+Delete and choose `"Change Password`".<br>
-            <p>Best regards,<br>
-            <p>IT Support<br>
-            <p> <br>
-            <p>This is an automated mail, please do not reply to it.
-            </P>"
-        $Parameters.To = $User.Mail
-        $Parameters.Body
-        Send-MailMessage @Parameters
-        Add-Log $LogPath "Mail sent to $($User.Mail) : $Days"
-        $MailCount++
+    if($User.PasswordExpired -and !$IgnoreExpiredPswd){
+        Add-Log $LogPath "Password expired for user: $($User.DisplayName) . No mail sent."
+    }else{
+        Write-Host $User.Displayname
+        $Days = ($User.ExpiryDate - $Today).Days
+        $Days
+    
+        if($Days -le $PswdWarning){
+            $Parameters.Subject = "Password expires within $Days days"
+            $Parameters.Body = "
+                <p>Dear $($User.DisplayName),<br>
+                <p>You password expires in $Days day(s).
+                In order to change it, please use Ctrl+Alt+Delete and choose `"Change Password`".<br>
+                <p>Best regards,<br>
+                <p>IT Support<br>
+                <p> <br>
+                <p>This is an automated mail, please do not reply to it.
+                </P>"
+            $Parameters.To = $User.Mail
+            $Parameters.Body
+            Send-MailMessage @Parameters
+            Add-Log $LogPath "Mail sent to $($User.Mail) : $Days"
+            $MailCount++
+        }
     }
 }
 
