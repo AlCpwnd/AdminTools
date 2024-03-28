@@ -42,10 +42,6 @@ All the following are within __User Configuration__. Only the fields that were m
       - Read-only : Enabled
       - Hidden : Enabled
 
-## UserInfo.ps1
-
-Meant for completing existing AD user information.
-
 ### Arguments
 
 - Import : Path to the CSV file with the information you want to import.
@@ -56,3 +52,31 @@ Meant for completing existing AD user information.
 ## LogonAttempts.ps1
 
 Recovers successful and failed logon attempts on the current or given server(s).
+
+## MailNotification.ps1
+
+Will send a mail to the users of which the password is about to expire.
+Uses the user's `proxyAddress` property as recipient.
+
+## PswdChangePromptPrompt(Untersted).ps1
+
+> :warning: This script is untested.
+
+Dispays a windows prompt at the user login if the user's password will expire within the give window.
+
+## Report.ps1
+
+Resturns the User contents of the Active Directory with the following properties:
+
+- Name : DisplayName of the User
+- UserPrincipalName : UserName
+- OU : Path within the folder structure where the user is located
+- Enabled : If the User is enabled
+
+## UserDisable.ps1
+
+Disables the users that exceed the inactivity treshold.
+
+## UserInfo.ps1
+
+Meant for completing existing AD user information.
