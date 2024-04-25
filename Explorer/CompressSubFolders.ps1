@@ -34,9 +34,6 @@ foreach($Folder in $Folders){
     .EXAMPLE
     PS> CompressSubFolders -Path E:\Data\
 
-    .EXAMPLE
-    PS> Folder_Inheritance.ps1 E:\Data
-
     .LINK
     Get-ChildItem
 
