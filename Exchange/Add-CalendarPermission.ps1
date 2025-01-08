@@ -17,4 +17,11 @@ function Get-CalendarFolder{
     return $Calendar
 }
 
-Add-MailboxFolderPermission -Identity (Get-CalendarFolder -User $Identity) -User $User -AccessRights $AccessRight
+$Folder = Get-CalendarFolder -User $Identity
+$Permission = Get-EXOMailboxFolderPermission -Identity $Folder -User $User -ErrorAction SilentlyContinue
+if(-not $Permission){
+    Add-MailboxFolderPermission -Identity $Folder -User $User -AccessRights $AccessRight
+}
+elseif($Permission.AccessRights -notcontains $AccessRight){
+    Set-MailboxFolderPermission -Identity $Folder -User $User -AccessRights $AccessRight
+}
