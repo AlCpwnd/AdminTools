@@ -1,7 +1,8 @@
 param(
     [Parameter(Mandatory)][String]$Identity,
     [Parameter(Mandatory)][string]$User,
-    [Parameter(Mandatory)][ValidateSet("Owner","Reviewer","Editor")][String]$AccessRight
+    [Parameter(Mandatory)][ValidateSet("Owner","Reviewer","Editor")][String]$AccessRight,
+    [Parameter()][Bool]$Silent
 )
 
 function Get-CalendarFolder{
@@ -17,4 +18,15 @@ function Get-CalendarFolder{
     return $Calendar
 }
 
-Add-MailboxFolderPermission -Identity (Get-CalendarFolder -User $Identity) -User $User -AccessRights $AccessRight
+$Folder = Get-CalendarFolder -User $Identity
+$Permission = Get-EXOMailboxFolderPermission -Identity $Folder -User $User -ErrorAction SilentlyContinue
+if(-not $Permission){
+    if(-not $Silent){Write-Host "Permission added: $Folder [$AccessRight] : $User" -ForegroundColor Green}
+    Add-MailboxFolderPermission -Identity $Folder -User $User -AccessRights $AccessRight
+}
+elseif($Permission.AccessRights -notcontains $AccessRight){
+    if(-not $Silent){Write-Host "Permission added: $Folder [$AccessRight] : $User" -ForegroundColor Yellow}
+    Set-MailboxFolderPermission -Identity $Folder -User $User -AccessRights $AccessRight
+}else{
+    if(-not $Silent){Write-Host "Permission already exists: $Folder"}
+}
